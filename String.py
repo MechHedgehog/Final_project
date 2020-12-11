@@ -87,7 +87,7 @@ def text_checker():
                 # word - последнее введенное слово
                 word = re.findall(r'[а-яА-Я]+', input_text)[-1]
                 print(f'Последнее слово: {word}')
-                # По условию задания в подсказках появляется 3 случайных предлога
+                # В подсказках появляется 3 случайных предлога
                 curent_words = random.sample(random_words, 3)
                 if len(input_text) > 1 and input_text[-2] in ".?!":
                     curent_words = list(map(lambda s: s.capitalize(), curent_words))
@@ -96,7 +96,7 @@ def text_checker():
                 ui.lineEdit.setFocus()
             except IndexError:
                 hide_buttons()
-        # BONUS: более красивое форматирование текста при вволе знаков препинания ".,?!"
+        # более красивое форматирование текста при вволе знаков препинания ".,?!"
         elif len(input_text) > 1 and input_text[-2] == " ":
             if input_text[-1] == ',':
                 ui.lineEdit.setText(ui.lineEdit.text()[:-2] + ui.lineEdit.text()[-1:] + " ")
