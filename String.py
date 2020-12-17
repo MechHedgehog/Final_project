@@ -1,9 +1,9 @@
 import re
 import sys
-import random
 import pyperclip
+import random
 # Для построения графического пользовательского интерфейса будет использоваться библиотека PyQT5
-# Для установки можно просто открыть консоль и ввести "pip install PyQt5" и "pip install pyperclip"
+# Для установки можно просто открыть консоль в папке и ввести "pip install PyQt5" и "pip install pyperclip"
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -36,23 +36,41 @@ class MainWindow(QWidget):
         # Поле ввода
         self.lineEdit = QLineEdit()
         self.lineEdit.setStyleSheet("border:1px solid black;color:black;font-size:16px;min-width:400px;height:24px;")
-        # в поле ввода нельзя вводить латинские символы и цифры 0, 4-9, потому что они не задействованы в функционале
-        self.lineEdit.setValidator(QRegExpValidator(QRegExp("[^a-zA-Z04-9]*"), self.lineEdit))
+        # в поле ввода нельзя вводить латинские символы
+        self.lineEdit.setValidator(QRegExpValidator(QRegExp("[^a-zA-Z]*"), self.lineEdit))
         layout.addWidget(self.lineEdit, 1, 0, 1, 3)
+        self.lineEdit.setFocus()
 
         # Не позволяет изменять размеры окна
-        self.setFixedSize(440, 100)
+        self.setFixedSize(450, 100)
 
     # Обработка нажатия клавиш
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_F5:
-            curent_words = random.sample(random_words, 3)
-            self.pushButton_1.setText(curent_words[0])
-            self.pushButton_2.setText(curent_words[1])
-            self.pushButton_3.setText(curent_words[2])
+            self.reload_buttons()
         if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
             pyperclip.copy(self.lineEdit.text())
             self.lineEdit.setText('')
+        if event.modifiers() and Qt.ControlModifier:
+            if event.key() == Qt.Key_1:
+                self.lineEdit.setText(self.lineEdit.text() + self.pushButton_1.text() + ' ')
+            if event.key() == Qt.Key_2:
+                self.lineEdit.setText(self.lineEdit.text() + self.pushButton_2.text() + ' ')
+            if event.key() == Qt.Key_3:
+                self.lineEdit.setText(self.lineEdit.text() + self.pushButton_3.text() + ' ')
+
+    # обновление подсказок
+    def reload_buttons(self):
+        curent_words = random.sample(random_words, 3)
+        if len(self.lineEdit.text()) == 0 or len(self.lineEdit.text()) > 1 and self.lineEdit.text()[-2] in ".?!":
+            self.pushButton_1.setText(curent_words[0].capitalize())
+            self.pushButton_2.setText(curent_words[1].capitalize())
+            self.pushButton_3.setText(curent_words[2].capitalize())
+        else:
+            self.pushButton_1.setText(curent_words[0])
+            self.pushButton_2.setText(curent_words[1])
+            self.pushButton_3.setText(curent_words[2])
+        self.lineEdit.setFocus()
 
 
 # Создание приложенич
@@ -78,10 +96,6 @@ def text_checker():
     # input_text - получает текст поля ввода
     input_text = window.lineEdit.text()
     if len(input_text) > 0:
-        # Если была введена цифра
-        if re.match(r'\d', input_text[-1]):
-            window.lineEdit.setText(input_text[:-1] + buttons[int(input_text[-1]) - 1].text() + ' ')
-            return
         # Подсказки будут появляться только после ввода слова и пробела после него
         if input_text[-1] == ' ':
             hide_buttons(True)
@@ -89,13 +103,8 @@ def text_checker():
                 # word - последнее введенное слово
                 # word = re.findall(r'[а-яА-Я]+', input_text)[-1]
                 # print(f'Последнее слово: {word}')
-                # В подсказках появляется 3 случайных предлога
-                curent_words = random.sample(random_words, 3)
-                if len(input_text) > 1 and input_text[-2] in ".?!":
-                    curent_words = list(map(lambda s: s.capitalize(), curent_words))
-                for index, button in enumerate(buttons):
-                    button.setText(curent_words[index])
-                window.lineEdit.setFocus()
+                # По условию задания в подсказках появляется 3 случайных предлога
+                window.reload_buttons()
             except IndexError:
                 hide_buttons()
         # Более красивое форматирование текста при вволе знаков препинания ".,?!"
