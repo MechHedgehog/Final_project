@@ -12,21 +12,30 @@ import torch
 from torchtext.data import Field, BucketIterator, TabularDataset
 from utils import load_checkpoint, pred
 import string
-mem = []
+
+
+#choose device 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 current_context = []
 pred_on_con = []
-rus = Field( tokenize=tokin, lower=True, init_token="<sos>", eos_token="<eos>")
+mem = []
+
+#make field of text
+rus = Field( tokenize=tokin, lower = True, init_token = "<sos>", eos_token="<eos>")
 train_data, validation_data, test_data = TabularDataset.splits(
                                         train = 'train.json',
                                         validation= 'validation.json',
                                         test='test.json',
                                         format = 'json',
-                                        fields = {"src" : ("src", rus), "trg" : ("trg",rus)}
+                                        fields = {"src" : ("src", rus), "trg" : ("trg",rus)})
 
-)
+
 def de_pun(text):
+  '''
+  This function deletes punctuation and numbers
+  Params: text - text (file)
+  '''
     ou = []
     for i in text:
         l = i
@@ -34,8 +43,12 @@ def de_pun(text):
             l = l.replace(j, "")
         ou.append(l)
     return ou
+
+
+#build vocabulary    
 rus.build_vocab(train_data, max_size=10000, min_freq=2)
 
+#trainig params
 num_epochs = 100
 learning_rate = 3e-4
 batch_size = 4
@@ -50,18 +63,11 @@ hidden_size = 800
 num_layers = 1
 enc_dropout = 0.0
 dec_dropout = 0.0
-encoder_net = Encoder(
-    input_size_encoder, encoder_embedding_size, hidden_size, num_layers, enc_dropout
-).to(device)
+encoder_net = Encoder( input_size_encoder, encoder_embedding_size, 
+                      hidden_size, num_layers, enc_dropout).to(device)
 
-decoder_net = Decoder(
-    input_size_decoder,
-    decoder_embedding_size,
-    hidden_size,
-    output_size,
-    num_layers,
-    dec_dropout,
-).to(device)
+decoder_net = Decoder( input_size_decoder, decoder_embedding_size,
+    hidden_size, output_size, num_layers, dec_dropout,).to(device)
 
 model = Seq2Seq(encoder_net, decoder_net).to(device)
 """checkpoint = torch.load("checkpoint.tar")
@@ -100,6 +106,7 @@ class MainWindow(QWidget):
         # Does not allow you to resize the window
         self.setFixedSize(450, 100)
 
+
     # Key press processing
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
@@ -114,6 +121,7 @@ class MainWindow(QWidget):
                 text_appender(self.pushButton_2.text())
             if event.key() == Qt.Key_3:
                 text_appender(self.pushButton_3.text())
+
 
     # tooltip update
     def reload_buttons(self, curent_words):
@@ -221,8 +229,6 @@ def text_checker():
                 pred_on_con = current_words
             for index, button in enumerate(buttons):
                 button.setText(current_words[index])
-
-
     else:
         # The input field is now blank.
         hide_buttons(True)
