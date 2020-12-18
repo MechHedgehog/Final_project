@@ -15,7 +15,7 @@ def pred(model, sentence,rus, device, max_length=50, fl=0):
     tokens.insert(0, "<sos>")
     tokens.append("<eos>")
 
-    # Go through each german token and convert to an index
+    # Go through each token and convert to an index
     text_to_indices = [rus.vocab.stoi[token] for token in tokens]
 
     # Convert to Tensor
