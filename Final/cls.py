@@ -3,10 +3,11 @@ import torch
 import torch.nn as nn
 from torchtext.data import Field, TabularDataset
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
 def tokin(text):
-
+#This is tokinizer
     text = text.split(" ")
-
     m = []
     for i in text:
         k = i
@@ -23,23 +24,23 @@ def tokin(text):
     return m
 
 
-rus = Field( tokenize=tokin, lower=True, init_token="<sos>", eos_token="<eos>")
-train_data, validation_data, test_data = TabularDataset.splits(
 
+#Create a field
+rus = Field( tokenize=tokin, lower = True, init_token = "<sos>", eos_token = "<eos>")
+train_data, validation_data, test_data = TabularDataset.splits(
                                         train = 'train.json',
                                         validation= 'validaton.json',
                                         test='test.json',
                                         format = 'json',
-                                        fields = {"src" : ("src", rus), "trg" : ("trg",rus)}
-
-)
-
-rus.build_vocab(train_data, max_size=100000, min_freq=2)
+                                        fields = {"src" : ("src", rus), "trg" : ("trg",rus)})
+#Create vocabulary
+rus.build_vocab(train_data, max_size = 100000, min_freq=2)
 
 
 
 
 class Encoder(nn.Module):
+
     def __init__(self, input_size, embedding_size, hidden_size, num_layers, p):
         super(Encoder, self).__init__()
         self.hidden_size = hidden_size
@@ -70,10 +71,10 @@ class Encoder(nn.Module):
         return encoder_states, hidden, cell
 
 
+
 class Decoder(nn.Module):
-    def __init__(
-        self, input_size, embedding_size, hidden_size, output_size, num_layers, p
-    ):
+    def __init__(self, input_size, embedding_size, hidden_size, 
+                 output_size, num_layers, p):
         super(Decoder, self).__init__()
         self.hidden_size = hidden_size
         self.num_layers = num_layers
@@ -103,6 +104,7 @@ class Decoder(nn.Module):
         # predictions: (N, hidden_size)
 
         return predictions, hidden, cell
+
 
 
 class Seq2Seq(nn.Module):
