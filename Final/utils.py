@@ -5,12 +5,20 @@ import sys
 import torch.nn.functional as F
 
 def pred(model, sentence,rus, device, max_length=50, fl=0):
+    '''
+    This is the function that predicts next word basing on previouse ones
+    Params:
+    model - Model - here you need to input your pretrained model
+    sentence - string - person's sentence
+    device - device - previously chosen device
+    rus - field - your corpus
+    '''
     q = []
-
     bf = ""
     tokens = [token.lower() for token in sentence]
     if fl:
         bf = sentence.pop()
+        
     # Add <SOS> and <EOS> in beginning and end respectively
     tokens.insert(0, "<sos>")
     tokens.append("<eos>")
@@ -61,12 +69,12 @@ def pred(model, sentence,rus, device, max_length=50, fl=0):
     # remove start token
 
 
-def save_checkpoint(state, filename="my_checkpoint.pth.tar"):
-    print("=> Saving checkpoint")
+def save_checkpoint(state, filename = "my_checkpoint.pth.tar" ):
+    print(" => Saving checkpoint ")
     torch.save(state, filename)
 
 
 def load_checkpoint(checkpoint, model, optimizer):
-    print("=> Loading checkpoint")
+    print(" => Loading checkpoint ")
     model.load_state_dict(checkpoint["state_dict"])
     optimizer.load_state_dict(checkpoint["optimizer"])
