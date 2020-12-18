@@ -15,6 +15,6 @@ All nessesary programs are in "final" folder. Before you start, you need few thi
 
 
 
-:black_square_button: Install our model
+:black_square_button: Download our model and put it in derectory with another files https://drive.google.com/file/d/1cKAaZw1fADiDN5qYb67v6lp-4m-RLI3l/view?usp=sharing
 
 
