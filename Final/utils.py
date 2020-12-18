@@ -4,7 +4,8 @@ from torchtext.data.metrics import bleu_score
 import sys
 import torch.nn.functional as F
 
-def pred(model, sentence,rus, device, max_length=50, fl=0):
+
+def pred(model, sentence, rus, device, max_length=50, fl=0):
     '''
     This is the function that predicts next word basing on previouse ones
     Params:
@@ -15,10 +16,12 @@ def pred(model, sentence,rus, device, max_length=50, fl=0):
     '''
     q = []
     bf = ""
-    tokens = [token.lower() for token in sentence]
     if fl:
         bf = sentence.pop()
-        
+    tokens = [token.lower() for token in sentence]
+
+    if tokens == []:
+        tokens = ["привет"]
     # Add <SOS> and <EOS> in beginning and end respectively
     tokens.insert(0, "<sos>")
     tokens.append("<eos>")
@@ -58,23 +61,22 @@ def pred(model, sentence,rus, device, max_length=50, fl=0):
         # Model predicts it's the end of the sentence
         if output.argmax(1).item() == rus.vocab.stoi["<eos>"]:
             break
+    ret = []
+    for i in q[-2]:
+        if rus.vocab.itos[i] != "<unk>":
+            ret.append(i)
     if fl:
         m = []
-        for i in q[-2]:
+        for i in ret:
             if bf in rus.vocab.itos[i][:len(bf)]:
                 m.append(rus.vocab.itos[i])
         return m
-    return [rus.vocab.itos[i] for i in q[-2]]
+    return [rus.vocab.itos[i] for i in ret]
 
-    # remove start token
+def save_text(mem):
+    with open("mem.json", "a", encoding="windows-1251") as f:
+        for i in mem:
+            if "{\"src\":\"" + " ".join(i[0:-1]) + "\",\"trg\":\"" + " ".join(i[1:]) + "\"}" != "{\"src\":\"\",\"trg\":\"\"}":
+                f.write("{\"src\":\"" + " ".join(i[0:-1]) + "\",\"trg\":\"" + " ".join(i[1:]) + "\"}\n")
+    print("memory saved")
 
-
-def save_checkpoint(state, filename = "my_checkpoint.pth.tar" ):
-    print(" => Saving checkpoint ")
-    torch.save(state, filename)
-
-
-def load_checkpoint(checkpoint, model, optimizer):
-    print(" => Loading checkpoint ")
-    model.load_state_dict(checkpoint["state_dict"])
-    optimizer.load_state_dict(checkpoint["optimizer"])

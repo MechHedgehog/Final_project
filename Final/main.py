@@ -1,7 +1,6 @@
 import re
 import sys
 import pyperclip
-import random
 from cls import Encoder, Decoder, Seq2Seq, tokin
 # The PyQT5 library will be used to build a graphical user interface
 # To install, you can simply open the console in the folder and type "pip install PyQt5" and "pip install pyperclip"
@@ -9,12 +8,12 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 import torch
-from torchtext.data import Field, BucketIterator, TabularDataset
-from utils import load_checkpoint, pred
+from torchtext.data import Field, TabularDataset
+from utils import pred, save_text
 import string
 
 
-#choose device 
+#choose device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 current_context = []
@@ -24,7 +23,8 @@ mem = []
 #make field of text
 rus = Field( tokenize=tokin, lower = True, init_token = "<sos>", eos_token="<eos>")
 train_data, validation_data, test_data = TabularDataset.splits(
-                                        train = 'train.json',
+                                        path=r'C:\Users\Acer\PycharmProjects\final_BLT',
+                                        train='train.json',
                                         validation= 'validation.json',
                                         test='test.json',
                                         format = 'json',
@@ -32,10 +32,10 @@ train_data, validation_data, test_data = TabularDataset.splits(
 
 
 def de_pun(text):
-  '''
-  This function deletes punctuation and numbers
-  Params: text - text (file)
-  '''
+    '''
+    This function deletes punctuation and numbers
+    Params: text - text (file)
+    '''
     ou = []
     for i in text:
         l = i
@@ -45,34 +45,33 @@ def de_pun(text):
     return ou
 
 
-#build vocabulary    
-rus.build_vocab(train_data, max_size=10000, min_freq=2)
+#build vocabulary
+rus.build_vocab(train_data, max_size=16384, min_freq=4)
 
 #trainig params
 num_epochs = 100
 learning_rate = 3e-4
-batch_size = 4
+batch_size = 3
 
 # Model hyperparameters
 input_size_encoder = len(rus.vocab)
 input_size_decoder = len(rus.vocab)
 output_size = len(rus.vocab)
-encoder_embedding_size = 150
-decoder_embedding_size = 150
-hidden_size = 800
+encoder_embedding_size = 130
+decoder_embedding_size = 130
+hidden_size = 700
 num_layers = 1
 enc_dropout = 0.0
 dec_dropout = 0.0
-encoder_net = Encoder( input_size_encoder, encoder_embedding_size, 
+encoder_net = Encoder( input_size_encoder, encoder_embedding_size,
                       hidden_size, num_layers, enc_dropout).to(device)
 
 decoder_net = Decoder( input_size_decoder, decoder_embedding_size,
     hidden_size, output_size, num_layers, dec_dropout,).to(device)
 
 model = Seq2Seq(encoder_net, decoder_net).to(device)
-"""checkpoint = torch.load("checkpoint.tar")
-model.load_state_dict(checkpoint['model_state_dict'])"""
-model.load_state_dict(torch.load("checkpoint.pt"))
+checkpoint = torch.load("checkpoint.tar")
+model.load_state_dict(checkpoint['model_state_dict'])
 
 # Compared with version 1, the project structure has changed slightly. Now layout is used for more flexibility
 class MainWindow(QWidget):
@@ -109,6 +108,9 @@ class MainWindow(QWidget):
 
     # Key press processing
     def keyPressEvent(self, event):
+        if event.key() == Qt.Key_F5:
+            save_text(mem)
+            mem.clear()
         if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
             pyperclip.copy(self.lineEdit.text())
             self.lineEdit.setText('')
@@ -148,7 +150,6 @@ window = MainWindow()
 buttons = [window.pushButton_1, window.pushButton_2, window.pushButton_3]
 
 
-# Hints are not always necessary. When the user enters a word - the tooltips are hidden
 def hide_buttons(show=True):
     for button in buttons:
         button.setDisabled(not show)
@@ -172,7 +173,6 @@ def text_checker():
 
                 current_context.append(word)
                 current_words = pred(model, de_pun(current_context), rus, device, max_length=50)[1:]
-                # print(f'Последнее слово: {word}')
                 # By the condition of the task 3 random prepositions appear in the prompts
                 for index, button in enumerate(buttons):
                     button.setText(current_words[index])
@@ -211,12 +211,12 @@ def text_checker():
                 button.setText(button.text().capitalize())
 
         elif len(input_text) == 1:
-            if input_text not in string.punctuation:
-                pred_on_con = pred(model, de_pun([input_text]), rus, device, max_length=50, fl=1)[1:]
-                for index, button in enumerate(buttons):
-                    button.setText(pred_on_con[index])
+            pred_on_con = pred(model, de_pun([input_text]), rus, device, max_length=50, fl=1)[1:]
+            for index, button in enumerate(buttons):
+                button.setText(pred_on_con[index])
         else:
             x = input_text.split(" ")[-1]
+
             current_words = []
             if pred_on_con != []:
                 for i in pred_on_con:
@@ -225,7 +225,10 @@ def text_checker():
                 if len(current_words) < 3:
                     current_words += pred_on_con
             else:
-                current_words = pred(model, de_pun(current_context + [x]), rus, device, max_length=50, fl=1)[1:]
+                if x in "приветая" and x == input_text:
+                    current_words = pred(model, de_pun(current_context + [x]), rus, device, max_length=50)
+                else:
+                    current_words = pred(model, de_pun(current_context + [x]), rus, device, max_length=50, fl=1)
                 pred_on_con = current_words
             for index, button in enumerate(buttons):
                 button.setText(current_words[index])
@@ -240,9 +243,9 @@ def text_checker():
 def text_appender(text):
 
     if len(window.lineEdit.text()) > 0 and window.lineEdit.text()[-1] != " ":
-        window.lineEdit.setText(" ".join(window.lineEdit.text().split(" ")[:-1]) + " " + text + " ")
+        window.lineEdit.setText(" ".join(window.lineEdit.text().split(" ")[:-1]) + " " + text)
     else:
-        window.lineEdit.setText(window.lineEdit.text() + text + " ")
+        window.lineEdit.setText(window.lineEdit.text() + text)
 
 
 # Set the first values for the prompts
@@ -261,6 +264,3 @@ window.pushButton_3.clicked.connect(lambda: text_appender(window.pushButton_3.te
 # main loop
 window.show()
 sys.exit(app.exec_())
-"""with open("mem.json", "a") as f:
-    for i in mem:
-        f.write("{\"src\":\"" + " ".join(i[0:-1]) + "\",\"trg\":\"" + " ".join(i[1:]) + "\"}\n")"""

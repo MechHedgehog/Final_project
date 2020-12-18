@@ -2,11 +2,12 @@ import random
 import torch
 import torch.nn as nn
 from torchtext.data import Field, TabularDataset
+
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-
 def tokin(text):
-#This is tokinizer
+    # This is tokinizer
     text = text.split(" ")
     m = []
     for i in text:
@@ -24,17 +25,17 @@ def tokin(text):
     return m
 
 
-
-#Create a field
+# Create a field
 rus = Field( tokenize=tokin, lower = True, init_token = "<sos>", eos_token = "<eos>")
 train_data, validation_data, test_data = TabularDataset.splits(
-                                        train = 'train.json',
-                                        validation= 'validaton.json',
-                                        test='test.json',
-                                        format = 'json',
+                                        path="Final",
+                                        train="train.json",
+                                        validation="validation.json",
+                                        test="test.json",
+                                        format="json",
                                         fields = {"src" : ("src", rus), "trg" : ("trg",rus)})
-#Create vocabulary
-rus.build_vocab(train_data, max_size = 100000, min_freq=2)
+# Create vocabulary
+rus.build_vocab(train_data, max_size = 16384, min_freq=4)
 
 
 
@@ -73,7 +74,7 @@ class Encoder(nn.Module):
 
 
 class Decoder(nn.Module):
-    def __init__(self, input_size, embedding_size, hidden_size, 
+    def __init__(self, input_size, embedding_size, hidden_size,
                  output_size, num_layers, p):
         super(Decoder, self).__init__()
         self.hidden_size = hidden_size
@@ -133,4 +134,3 @@ class Seq2Seq(nn.Module):
             x = target[t] if random.random() < teacher_force_ratio else best_guess
 
         return outputs
-
